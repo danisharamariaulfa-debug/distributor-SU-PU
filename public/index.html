@@ -178,7 +178,7 @@
                     return;
                 }
 
-                data.forEach(item => {
+                data.slice().reverse().forEach(item => {
                     let kodeKec = item.kecamatan === 'WONOSALAM' ? 'WNS' : (item.kecamatan === 'GUNTUR' ? 'GNT' : 'DMK');
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50">
@@ -194,8 +194,9 @@
             }
         }
 
-        document.getElementById('formPengiriman').addEventListener('submit', async (e) => {
+        document.getElementById('formPengiriman').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
             const payload = {
                 tanggal: document.getElementById('tanggal').value,
                 kecamatan: document.getElementById('kecamatan').value,
@@ -212,15 +213,17 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (res.ok) {
+                const result = await res.json();
+                if (res.ok && result.success) {
                     document.getElementById('qty').value = '';
                     document.getElementById('statusBayar').value = '';
                     await loadData();
                 } else {
-                    alert("Gagal menyimpan data.");
+                    alert("Gagal menyimpan data dari server.");
                 }
             } catch (err) {
-                alert("Koneksi gagal.");
+                alert("Koneksi gagal ke server.");
+                console.error(err);
             }
         });
 
