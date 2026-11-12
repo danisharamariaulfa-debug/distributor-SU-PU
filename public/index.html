@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Pengiriman Pupuk - Samaru & Utama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.10/html-to-image.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Sistem Rekap Pengiriman Pupuk</h1>
+                <p class="text-sm text-slate-500">Input Lapangan & Export Format Mekari Jurnal</p>
+            </div>
+            <div>
+                <a href="/api/export-jurnal" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition shadow-sm inline-block">
+                    📥 Export Excel/CSV Format Jurnal
+                </a>
+            </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Form Input -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-1">
+                <h2 class="text-lg font-semibold mb-4 text-slate-800">➕ Input Pengiriman</h2>
+                <form id="formPengiriman" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Tanggal</label>
+                        <input type="date" id="tanggal" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Kecamatan</label>
+                        <select id="kecamatan" onchange="updateKiosList()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <option value="DEMAK">KECAMATAN DEMAK</option>
+                            <option value="GUNTUR">KECAMATAN GUNTUR</option>
+                            <option value="WONOSALAM">KECAMATAN WONOSALAM</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nama Kios / KPPTS</label>
+                        <select id="kios" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Komoditas</label>
+                            <select id="komoditas" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                <option value="UREA">Urea Subsidi (50kg)</option>
+                                <option value="NPK">Phonska Subsidi (50kg)</option>
+                                <option value="POG">Petroganik (40kg)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Qty (Sak)</label>
+                            <input type="number" id="qty" placeholder="Cth: 100" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Keterangan / Pembayaran</label>
+                        <input type="text" id="statusBayar" placeholder="Cth: Lunas / Bayar di tempat" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+                        Simpan Data
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tabel Preview -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-slate-800">📋 Preview Rekap Pengiriman</h2>
+                        <button onclick="downloadGambar()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition shadow-sm">
+                            📸 Download Tabel Jadi Gambar (PNG)
+                        </button>
+                    </div>
+
+                    <div id="areaTabel" class="bg-white p-4 rounded-xl border border-slate-100 overflow-x-auto">
+                        <div class="mb-3">
+                            <h3 class="font-bold text-slate-900">📦 REKAP PENGIRIMAN PUPUK</h3>
+                            <p class="text-xs text-slate-500" id="labelTanggalDisplay">Tanggal: -</p>
+                        </div>
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase">
+                                    <th class="py-2 px-2">Kec</th>
+                                    <th class="py-2 px-2">Kios / KPPTS</th>
+                                    <th class="py-2 px-2">Produk & Qty</th>
+                                    <th class="py-2 px-2">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelBody" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-4 italic">*Responsif dan mudah dibuka lewat HP anak-anak di lapangan.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const masterKios = {
+            "DEMAK": [
+                "ADIB (SUWITO)", "ANA PUTRA (SYAFAATUL KHOIRIL ANAM)", "ANUGRAH KM (RIYANTO)", 
+                "BARA TANI ASIH (KARISMARIAMATTAN)", "BAROKAH KT (ACHMAD MUTOHAR)", "BERKAH TANI (MASHADI)", 
+                "FAJAR (MASTURI)", "HASRAT MULIA (JASMADI)", "HUKY JAYA (ACHMAD SALIM)", "JAYA INDAH (SARTATIK)", 
+                "KONCO TANI (SUTANTO)", "KSB (KHASBULLOH)", "UD. LADANG SARI (DARWATI)", "MAKMUR DM (SRI NURASIH)", 
+                "MEKAR JAYA (DURIYANTO)", "MEKAR SARI (KISWINOTO)", "MULYA TANI (DWI SUSILANI)", "PRIBADI REJO (AHMAD LATIF)", 
+                "RIZKY TANI (UJIK IRA GUNARSO)", "RUDI JAYA (SUMBER RONDIYAH)", "SAFAAT (MARKUM)", "SAHABAT TANI MAKMUR (ASHADI)", 
+                "SAMI JAYA (SALWADI)", "SAPUTRA JAYA (SRIYATUN)", "SETIA TANI (SUPADI)", "SINAR KARUNIA (SUKARMAN)", 
+                "SRI REJEKI (SUROTO)", "SRIREJEKI TR (SRI HARTINI)", "TANI SUKSES (SUPIJAH)", "TEGAL REJO (SUKIMAN)", 
+                "USAHA JAYA ABADI (MUNAWAR ABDUL S)", "WAHYU PURNAMA (RAMINAH)", "WIJAYA (DUL THOLIB)"
+            ],
+            "GUNTUR": [
+                "FADHOL ILAHI (ABDUL MUKTI)", "HAVIZ PUTRA (AHMAD JOYO)", "MUGI MAKMUR (MUKSIN ABDUR ROHMAN)", 
+                "SAE MARYO TANI (SAEROZI)", "TATA JAYA (MOH PARYONO)", "FAFA JAYA (SITI MAHMUDAH)", "LUMAYAN ADA (MUHAMMAD ZAINI)", 
+                "SEDERHANA (NURIL FATIMATUZ Z)", "SINAR ABADI (HENY WULANDARI)", "SINAR JAYA (MASODAH)", "SRIWIJAYA (MUH SULAIMAN)", 
+                "SUMBER KAHURIPAN (HADI SUYITNO)", "TK TANI JAYA SK (HERRY SETIAWAN)", "USAHA TANI (INTEN DINARSIH)", 
+                "CAHAYA (NUR KAMID)", "FATHUR (KUSNIATI)", "KAWAN TANI JAYA (IKHASANUL AMAL)", "MEGA BUMI (BAHRUL ULUM)", 
+                "TOKO SARWOTO (SARWOTO)", "SUMBER REJEKI (SRI HARTATIK)", "TATALIA (SUHADI)", "TOSERBA ASIDIQI (YULI SANTOSO)", 
+                "ALFI (DEWI HARTINI)", "ARTHO MORO (MUHLISIN)", "HARAPAN MULYA (SUKARNO)", "HIDAYAH JAYA SAKTI (KUKUH HIDAYATUR ROHMAN)", 
+                "KRAJAN MAKMUR (EDI WINARTO)", "LANGGENG (KUNTO)", "MAJU UTAMA (JAIDUN)", "MANFAAT TANI (SUYUTI)", 
+                "MITRA TANI (APRIANI TRI SUSILOWATI)", "MITRA TANI MAKMUR (JUMARNO)", "RANGGA PANGESTU (SRI LESTARI)", 
+                "RIZKY (UMI SULISTIYOWATI)", "SALMA (MAT ANWAR)", "SEKAR INDAH (BASIR ROSAD)", "SUMBER BAROKAH (CATUR BUDI DIANAWATI)", 
+                "SUMBER TANI (KASBI)", "TANI JAYA TM (YUNIK AFATUL M)", "TIGA PUTRA (SITI ASLIKAH)", "TYAS JAYA (SUGITO)", "REJO MAKMUR (SUCIATI)"
+            ],
+            "WONOSALAM": [
+                "ABDI TANI (MIRAH)", "ALQOMAR (AHMAD SOFIYULLOH)", "ANUGRAH TANI (SUTARMAN)", "AYEM TANI (KUMAIDI)", 
+                "BAROKAH JAYA (SUPENO)", "BAROKAH TANI (ABDUL LATIF)", "BERKAH TANI 1 (SUWARDI)", "BERKAH TANI 2 (AHMAD RODLI)", 
+                "BUMI JAYA (H. RUSDI)", "HANDAYANI (ABU YANI)", "HIDAYAH TANI (SUWITO)", "ILHAM (MUHAMAD FAIDHON)", 
+                "ILHAM TANI (KHANDIRIN)", "JAYA ABADI (SUGITO)", "KARYA MULIA (MAHMUDI)", "KONCO TANI (ANIS SOFIYAN)", 
+                "LANCAR (H. ALI TOHA)", "MAKMUR WN (JUBAIDI)", "MAKMUR TANI (AHMAD ZAMRONI)", "NISSA USAHA (SURAMIN)", 
+                "PRAJA MANDIRI (HARYO SUWITO)", "REJEKI BAROKAH (HERMIYANTO)", "RIZKI JAYA (NUR ALI)", "SAHABAT TANI (MASTUTIK)", 
+                "SALMA TANI (UMI)", "SARANA TANI (SUTIMIN)", "SRI JAYA (SRI SUGIYATI)", "SUBUR TANI (MOHAMAD SOLEH)", 
+                "SUMBER HIDUP (SENIMAN)", "SUMBER MAKMUR (MAUIDOH KASANAH)", "TANI AJI (SASMITO AJI NUGROHO)", "NAFSIYAH (MAHMUDI)", 
+                "GEMILANG LESTARI (SULAIMAN)", "SOPO NYONO TANI (MUDZAKIR)", "TIGA SAUDARA (RASIPAH)", "VINA TANI (MUH SOLEH)"
+            ]
+        };
+
+        function updateKiosList() {
+            const kecamatan = document.getElementById('kecamatan').value;
+            const kiosSelect = document.getElementById('kios');
+            kiosSelect.innerHTML = '';
+            if (masterKios[kecamatan]) {
+                masterKios[kecamatan].forEach(kios => {
+                    const opt = document.createElement('option');
+                    opt.value = kios;
+                    opt.textContent = kios;
+                    kiosSelect.appendChild(opt);
+                });
+            }
+        }
+
+        document.getElementById('tanggal').valueAsDate = new Date();
+        document.getElementById('labelTanggalDisplay').innerText = "Tanggal: " + new Date().toLocaleDateString('id-ID');
+        updateKiosList();
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/pengiriman');
+                const data = await res.json();
+                const tbody = document.getElementById('tabelBody');
+                tbody.innerHTML = '';
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">Belum ada data pengiriman.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(item => {
+                    let kodeKec = item.kecamatan === 'WONOSALAM' ? 'WNS' : (item.kecamatan === 'GUNTUR' ? 'GNT' : 'DMK');
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 px-2 font-semibold text-xs text-indigo-600">${kodeKec}</td>
+                            <td class="py-2.5 px-2 text-xs font-medium">${item.kios}</td>
+                            <td class="py-2.5 px-2 text-xs">${item.komoditas} - ${item.qty} SAK</td>
+                            <td class="py-2.5 px-2 text-xs text-slate-500">${item.statusBayar || '-'}</td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                console.error("Gagal load data:", err);
+            }
+        }
+
+        document.getElementById('formPengiriman').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                tanggal: document.getElementById('tanggal').value,
+                kecamatan: document.getElementById('kecamatan').value,
+                kios: document.getElementById('kios').value,
+                komoditas: document.getElementById('komoditas').value,
+                qty: document.getElementById('qty').value,
+                statusBayar: document.getElementById('statusBayar').value,
+            };
+
+            try {
+                const res = await fetch('/api/pengiriman', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    document.getElementById('qty').value = '';
+                    document.getElementById('statusBayar').value = '';
+                    await loadData();
+                } else {
+                    alert("Gagal menyimpan data.");
+                }
+            } catch (err) {
+                alert("Koneksi gagal.");
+            }
+        });
+
+        function downloadGambar() {
+            const node = document.getElementById('areaTabel');
+            htmlToImage.toPng(node, { backgroundColor: '#ffffff', quality: 0.95 })
+                .then(function (dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `Rekap_Pengiriman_${new Date().toISOString().split('T')[0]}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                });
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
